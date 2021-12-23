@@ -1,0 +1,147 @@
+diff --git a/src/arm/Gget_proc_info.c b/src/arm/Gget_proc_info.c
+index 4051a10..7cd43eb 100644
+--- a/src/arm/Gget_proc_info.c
++++ b/src/arm/Gget_proc_info.c
+@@ -30,11 +30,18 @@ unw_get_proc_info (unw_cursor_t *cursor, unw_proc_info_t *pi)
+   struct cursor *c = (struct cursor *) cursor;
+   int ret;
+ 
+-  /* We can only unwind using Dwarf into on ARM: return failure code
+-     if it's not present.  */
+   ret = dwarf_make_proc_info (&c->dwarf);
+   if (ret < 0)
+-    return ret;
++    {
++      /* On ARM, some key routines such as _start() and _dl_start()
++        are missing DWARF unwind info.  We don't want to fail in that
++        case, because those frames are uninteresting and just mark
++        the end of the frame-chain anyhow.  */
++      memset (pi, 0, sizeof (*pi));
++      pi->start_ip = c->dwarf.ip;
++      pi->end_ip = c->dwarf.ip + 1;
++      return 0;
++    }
+ 
+   *pi = c->dwarf.pi;
+   return 0;
+diff --git a/src/arm/Ginit.c b/src/arm/Ginit.c
+index 2720d06..e924d6f 100644
+--- a/src/arm/Ginit.c
++++ b/src/arm/Ginit.c
+@@ -220,6 +220,7 @@ HIDDEN void
+ arm_local_addr_space_init (void)
+ {
+   memset (&local_addr_space, 0, sizeof (local_addr_space));
++  local_addr_space.big_endian = (__BYTE_ORDER == __BIG_ENDIAN);
+   local_addr_space.caching_policy = UNWI_DEFAULT_CACHING_POLICY;
+   local_addr_space.acc.find_proc_info = arm_find_proc_info;
+   local_addr_space.acc.put_unwind_info = arm_put_unwind_info;
+diff --git a/src/coredump/_UCD_find_proc_info.c b/src/coredump/_UCD_find_proc_info.c
+index 33b66c8..99ac5b9 100644
+--- a/src/coredump/_UCD_find_proc_info.c
++++ b/src/coredump/_UCD_find_proc_info.c
+@@ -147,16 +147,15 @@ _UCD_find_proc_info (unw_addr_space_t as, unw_word_t ip, unw_proc_info_t *pi,
+     ret = tdep_search_unwind_table (as, ip, &ui->edi.di_cache,
+                                     pi, need_unwind_info, arg);
+ 
++  if (ret == -UNW_ENOINFO && ui->edi.di_debug.format != -1)
++    ret = tdep_search_unwind_table (as, ip, &ui->edi.di_debug, pi,
++                                    need_unwind_info, arg);
+ #if UNW_TARGET_ARM
+   if (ret == -UNW_ENOINFO && ui->edi.di_arm.format != -1)
+     ret = tdep_search_unwind_table (as, ip, &ui->edi.di_arm, pi,
+                                     need_unwind_info, arg);
+ #endif
+ 
+-  if (ret == -UNW_ENOINFO && ui->edi.di_debug.format != -1)
+-    ret = tdep_search_unwind_table (as, ip, &ui->edi.di_debug, pi,
+-                                    need_unwind_info, arg);
+-
+   Debug(1, "returns %d\n", ret);
+ 
+   return ret;
+diff --git a/tests/Gtest-nomalloc.c b/tests/Gtest-nomalloc.c
+index 5b97fc7..275d74e 100644
+--- a/tests/Gtest-nomalloc.c
++++ b/tests/Gtest-nomalloc.c
+@@ -26,6 +26,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
+ #include <stdlib.h>
+ #include <dlfcn.h>
+ #include <libunwind.h>
++#include "config.h"
+ 
+ #define panic(args...)				\
+ 	{ fprintf (stderr, args); exit (-1); }
+@@ -43,8 +44,12 @@ malloc(size_t s)
+     func = (void *(*)()) dlsym(RTLD_NEXT, "malloc");
+ 
+   if (in_unwind) {
++#if (defined(__arm__) || defined(__aarch64__)) && defined(CONFIG_DEBUG_FRAME)
++    return NULL;
++#else
+     num_errors++;
+     return NULL;
++#endif /* (defined(__arm__) || defined(__aarch64__)) && defined(CONFIG_DEBUG_FRAME) */    
+   } else {
+     return func(s);
+   }
+diff --git a/tests/Ltest-nocalloc.c b/tests/Ltest-nocalloc.c
+index f5c31b2..c2b79ba 100644
+--- a/tests/Ltest-nocalloc.c
++++ b/tests/Ltest-nocalloc.c
+@@ -29,6 +29,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
+ #include <stdlib.h>
+ #include <dlfcn.h>
+ #include <pthread.h>
++#include "config.h"
+ 
+ #define panic(args...)				\
+ 	{ fprintf (stderr, args); exit (-1); }
+@@ -55,8 +56,12 @@ calloc(size_t n, size_t s)
+ #endif
+ 
+   if (in_unwind) {
++#if (defined(__arm__) || defined(__aarch64__)) && defined(CONFIG_DEBUG_FRAME)
++    return NULL;
++#else
+     num_callocs++;
+     return NULL;
++#endif /* (defined(__arm__) || defined(__aarch64__)) && defined(CONFIG_DEBUG_FRAME) */
+   } else {
+     return func(n, s);
+   }
+@@ -71,8 +76,12 @@ malloc(size_t s)
+     func = dlsym(RTLD_NEXT, "malloc");
+ 
+   if (in_unwind) {
++#if (defined(__arm__) || defined(__aarch64__)) && defined(CONFIG_DEBUG_FRAME)
++    return NULL;
++#else
+     num_mallocs++;
+     return NULL;
++#endif /* (defined(__arm__) || defined(__aarch64__)) && defined(CONFIG_DEBUG_FRAME) */
+   } else {
+     return func(s);
+   }
+diff --git a/tests/run-coredump-unwind b/tests/run-coredump-unwind
+index 8d07742..035ad53 100755
+--- a/tests/run-coredump-unwind
++++ b/tests/run-coredump-unwind
+@@ -27,8 +27,15 @@ add_minidebug()
+   mini_debuginfo="${mini_debuginfo}.xz"
+   objcopy --add-section .gnu_debugdata="$mini_debuginfo" "$binary"
+   rm -f "$dynsyms" "$funcsyms" "$keep_symbols" "$mini_debuginfo"
+-
+-  strip "$binary" ## throw away the symbol table
++  case $(uname -m) in
++    arm*)
++        # We need debug info fields to get unwind info
++        # in arm, so avoid discarding symbols
++        ;;
++    *)
++        strip "$binary" ## throw away the symbol table
++        ;;
++  esac
+ }
+ 
+ 

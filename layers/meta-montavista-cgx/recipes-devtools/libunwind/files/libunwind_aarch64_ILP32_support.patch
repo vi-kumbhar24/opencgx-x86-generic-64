@@ -1,0 +1,139 @@
+diff --git a/configure.ac b/configure.ac
+index 31d2817..10c2a09 100644
+--- a/configure.ac
++++ b/configure.ac
+@@ -183,8 +183,8 @@ AM_CONDITIONAL(OS_QNX, expr x$target_os : xnto-qnx >/dev/null)
+ AC_MSG_CHECKING([for ELF helper width])
+ case "${target_arch}" in
+ (arm|hppa|ppc32|x86|sh) use_elf32=yes; AC_MSG_RESULT([32]);;
+-(aarch64|ia64|ppc64|x86_64|tilegx)  use_elf64=yes; AC_MSG_RESULT([64]);;
+-(mips)                 use_elfxx=yes; AC_MSG_RESULT([xx]);;
++(ia64|ppc64|x86_64|tilegx)  use_elf64=yes; AC_MSG_RESULT([64]);;
++(aarch64|mips)                      use_elfxx=yes; AC_MSG_RESULT([xx]);;
+ *)                     AC_MSG_ERROR([Unknown ELF target: ${target_arch}])
+ esac
+ AM_CONDITIONAL(USE_ELF32, [test x$use_elf32 = xyes])
+diff --git a/include/tdep-aarch64/dwarf-config.h b/include/tdep-aarch64/dwarf-config.h
+index f65db17..421cc7e 100644
+--- a/include/tdep-aarch64/dwarf-config.h
++++ b/include/tdep-aarch64/dwarf-config.h
+@@ -35,6 +35,7 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
+ #define dwarf_is_big_endian(addr_space) 0
+ 
+ #define dwarf_to_unw_regnum(reg) (((reg) <= UNW_AARCH64_V31) ? (reg) : 0)
++#define dwarf_addr_size(addr_space) ((addr_space)->addr_size)
+ 
+ /* Convert a pointer to a dwarf_cursor structure to a pointer to
+    unw_cursor_t.  */
+diff --git a/include/tdep-aarch64/libunwind_i.h b/include/tdep-aarch64/libunwind_i.h
+index b91273f..69d8020 100644
+--- a/include/tdep-aarch64/libunwind_i.h
++++ b/include/tdep-aarch64/libunwind_i.h
+@@ -33,7 +33,11 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
+ #include <stdlib.h>
+ #include <libunwind.h>
+ 
++#ifdef __LP64__
+ #include "elf64.h"
++#else
++#include "elf32.h"
++#endif
+ #include "mempool.h"
+ #include "dwarf.h"
+ 
+@@ -77,6 +81,7 @@ struct unw_addr_space
+   {
+     struct unw_accessors acc;
+     int big_endian;
++    unsigned int addr_size;
+     unw_caching_policy_t caching_policy;
+ #ifdef HAVE_ATOMIC_OPS_H
+     AO_t cache_generation;
+diff --git a/src/Makefile.am b/src/Makefile.am
+index a557d8d..a2ea9d1 100644
+--- a/src/Makefile.am
++++ b/src/Makefile.am
+@@ -527,7 +527,7 @@ if ARCH_AARCH64
+  libunwind_aarch64_la_SOURCES = $(libunwind_aarch64_la_SOURCES_aarch64)
+  libunwind_aarch64_la_LDFLAGS = $(COMMON_SO_LDFLAGS) -version-info $(SOVERSION)
+  libunwind_aarch64_la_LIBADD = libunwind-dwarf-generic.la
+- libunwind_aarch64_la_LIBADD += libunwind-elf64.la
++ libunwind_aarch64_la_LIBADD += libunwind-elfxx.la
+ if !REMOTE_ONLY
+  libunwind_aarch64_la_LIBADD += libunwind.la -lc
+ endif
+diff --git a/src/aarch64/Ginit.c b/src/aarch64/Ginit.c
+index 9c4eae8..c1f2fdc 100644
+--- a/src/aarch64/Ginit.c
++++ b/src/aarch64/Ginit.c
+@@ -167,13 +167,18 @@ get_static_proc_name (unw_addr_space_t as, unw_word_t ip,
+                       char *buf, size_t buf_len, unw_word_t *offp,
+                       void *arg)
+ {
++#ifdef __LP64__    
+   return _Uelf64_get_proc_name (as, getpid (), ip, buf, buf_len, offp);
++#else
++  return _Uelf32_get_proc_name (as, getpid (), ip, buf, buf_len, offp);
++#endif
+ }
+ 
+ HIDDEN void
+ aarch64_local_addr_space_init (void)
+ {
+   memset (&local_addr_space, 0, sizeof (local_addr_space));
++  local_addr_space.addr_size = sizeof (void *);
+   local_addr_space.caching_policy = UNWI_DEFAULT_CACHING_POLICY;
+   local_addr_space.acc.find_proc_info = dwarf_find_proc_info;
+   local_addr_space.acc.put_unwind_info = put_unwind_info;
+diff --git a/src/aarch64/Gresume.c b/src/aarch64/Gresume.c
+index 3d82739..58e33f9 100644
+--- a/src/aarch64/Gresume.c
++++ b/src/aarch64/Gresume.c
+@@ -40,7 +40,11 @@ aarch64_local_resume (unw_addr_space_t as, unw_cursor_t *cursor, void *arg)
+     {
+       /* Since there are no signals involved here we restore EH and non scratch
+          registers only.  */
++#ifdef __LP64__
+       unsigned long regs[24];
++#else
++      unsigned long long regs[20];
++#endif
+       regs[0] = uc->uc_mcontext.regs[0];
+       regs[1] = uc->uc_mcontext.regs[1];
+       regs[2] = uc->uc_mcontext.regs[2];
+@@ -65,7 +69,11 @@ aarch64_local_resume (unw_addr_space_t as, unw_cursor_t *cursor, void *arg)
+       regs[21] = GET_FPCTX(uc)->vregs[13];
+       regs[22] = GET_FPCTX(uc)->vregs[14];
+       regs[23] = GET_FPCTX(uc)->vregs[15];
++#ifdef __LP64__      
+       unsigned long sp = uc->uc_mcontext.sp;
++#else
++      unsigned long long sp = uc->uc_mcontext.sp;
++#endif
+ 
+       struct regs_overlay {
+         char x[sizeof(regs)];
+diff --git a/src/aarch64/offsets.h b/src/aarch64/offsets.h
+index e78251d..9fc8a4d 100644
+--- a/src/aarch64/offsets.h
++++ b/src/aarch64/offsets.h
+@@ -4,11 +4,19 @@
+ 
+ /* Offsets for AArch64 Linux "ucontext_t":  */
+ 
++#ifdef __LP64__
+ #define LINUX_UC_FLAGS_OFF      0x0
+ #define LINUX_UC_LINK_OFF       0x8
+ #define LINUX_UC_STACK_OFF      0x10
+ #define LINUX_UC_SIGMASK_OFF    0x28
+ #define LINUX_UC_MCONTEXT_OFF   0xb0
++#else
++#define LINUX_UC_FLAGS_OFF      0x0
++#define LINUX_UC_LINK_OFF       0xC
++#define LINUX_UC_STACK_OFF      0x10
++#define LINUX_UC_SIGMASK_OFF    0x28
++#define LINUX_UC_MCONTEXT_OFF   0xB0
++#endif
+ 
+ /* Offsets for AArch64 Linux "struct sigcontext":  */
+ 

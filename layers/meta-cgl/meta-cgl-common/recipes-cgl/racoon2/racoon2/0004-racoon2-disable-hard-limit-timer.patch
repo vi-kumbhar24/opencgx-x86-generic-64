@@ -1,0 +1,79 @@
+From 06da02f5282e3e31f839f78f33107bb457dd365f Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Wed, 18 Mar 2020 20:22:57 +0000
+Subject: [PATCH] racoon2-disable-hard-limit-timer
+
+---
+ iked/ikev2_child.c | 14 +++++++-------
+ 1 file changed, 7 insertions(+), 7 deletions(-)
+
+diff --git a/iked/ikev2_child.c b/iked/ikev2_child.c
+index 8b693ff..0b8fa93 100644
+--- a/iked/ikev2_child.c
++++ b/iked/ikev2_child.c
+@@ -836,7 +836,7 @@ ikev2_create_child_responder_cont(struct ikev2_child_sa *child_sa)
+ 	ikev2_add_ipsec_sa(child_sa, &child_sa->child_param,
+ 			   child_sa->peer_proposal, child_sa->my_proposal[1]);
+ 
+-	/* #if defined(__FreeBSD__) || defined(__NetBSD__) */
++#if defined(__FreeBSD__) || defined(__NetBSD__)
+ 	/* KAME does not generate hard lifetime expiration message */
+ 	/* start expiration timer */
+ 	{
+@@ -858,7 +858,7 @@ ikev2_create_child_responder_cont(struct ikev2_child_sa *child_sa)
+ 			}
+ 		}
+ 	}
+-	/* #endif */
++#endif
+ 
+ 	TRACE((PLOGLOC, "ike_sa state %d\n", ike_sa->state));
+ 	switch (ike_sa->state) {
+@@ -1657,7 +1657,7 @@ ikev2_update_child(struct ikev2_child_sa *child_sa,
+ 
+ 	ikev2_child_state_set(child_sa, IKEV2_CHILD_STATE_MATURE);
+ 
+-	/* #if defined(__FreeBSD__) || defined(__NetBSD__) */
++#if defined(__FreeBSD__) || defined(__NetBSD__)
+ 	/* KAME does not generate hard lifetime expiration message */
+ 	/* start expiration timer */
+ 	{
+@@ -1681,7 +1681,7 @@ ikev2_update_child(struct ikev2_child_sa *child_sa,
+ 				goto abort_nomem;
+ 		}
+ 	}
+-	/* #endif */
++#endif
+ 
+       done:
+ 	if (new_my_proposal_list)
+@@ -1742,7 +1742,7 @@ ikev2_update_child(struct ikev2_child_sa *child_sa,
+ 	goto done;
+ }
+ 
+-/* #if defined(__FreeBSD__) || defined(__NetBSD__) */
++#if defined(__FreeBSD__) || defined(__NetBSD__)
+ /*
+  * timer callback for child_sa expiration
+  */
+@@ -1755,7 +1755,7 @@ ikev2_child_expire_callback(void *param)
+ 	SCHED_KILL(child_sa->timer);
+ 	ikev2_expire_child(child_sa);
+ }
+-/* #endif */
++#endif
+ 
+ int
+ ikev2_expired(struct sadb_request *req, struct rcpfk_msg *param)
+@@ -1883,7 +1883,7 @@ ikev2_expire_sa(struct ikev2_child_sa *child_sa, int expire_mode,
+ 		}
+ 		return;
+ 	case 2:		/* hard expired */
+-#if 1
++#if 0
+ 		/*
+ 		 * hard expire is not used, due to difference of KAME and USAGI.
+ 		 * instead, use child_sa->timer
+-- 
+2.24.1
+

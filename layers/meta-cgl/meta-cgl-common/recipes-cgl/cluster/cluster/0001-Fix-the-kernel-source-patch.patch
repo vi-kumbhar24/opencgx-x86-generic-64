@@ -1,0 +1,39 @@
+From 7ddf265becd44e7f7270ff98d2dcc14361effe8c Mon Sep 17 00:00:00 2001
+From: Qian Lei <qianl.fnst@cn.fujitsu.com>
+Date: Sun, 18 Jan 2015 14:01:17 +0800
+Subject: [PATCH] Fix the kernel source patch
+
+Signed-off-by: Qian Lei <qianl.fnst@cn.fujitsu.com>
+---
+ configure | 12 ++----------
+ 1 file changed, 2 insertions(+), 10 deletions(-)
+
+diff --git a/configure b/configure
+index 1e6356e..0c8038f 100755
+--- a/configure
++++ b/configure
+@@ -362,18 +362,10 @@ if (! -d "$objdir/make") {
+
+ my @un = POSIX::uname();
+ if (!$kernel_build) {
+-  if (-d "/lib/modules/$un[2]/build") {
+-    $kernel_build="/lib/modules/$un[2]/build";
+-  } else {
+-    $kernel_build="/usr/src/linux";
+-  }
++  $kernel_build="${KERNEL_SRC}";
+ }
+ if (!$kernel_src) {
+-  if (-d "/lib/modules/$un[2]/source") {
+-    $kernel_src="/lib/modules/$un[2]/source";
+-  } else {
+-    $kernel_src=$kernel_build;
+-  }
++  $kernel_src=$kernel_build;
+ }
+ if (not $disable_kernel_check and !kernel_version($kernel_src,$required_kernelversion)) {
+   exit 1;
+--
+1.8.3.1
+
+

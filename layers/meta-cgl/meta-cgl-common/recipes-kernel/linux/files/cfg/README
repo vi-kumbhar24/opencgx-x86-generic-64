@@ -1,0 +1,9 @@
+In order to add a configuration fragment contained in a .cfg file,
+please follow these steps:
+
+1. change to the directory that contains this README file.
+2. copy your fragment file here and make sure your file has a .cfg extension
+4. run the indexcfgs.pl utility from this directory to
+   index your file.
+5. check for the new name and use it to further reference your renamed
+   cfg file.

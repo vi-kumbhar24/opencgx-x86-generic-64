@@ -1,0 +1,13 @@
+[Unit]
+Description=Mount OCFS2 volumes
+Requires=o2cb.service
+After=network.target o2cb.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=@LIBDIR@/ocfs2-helper start
+ExecStop=@LIBDIR@/ocfs2-helper stop
+
+[Install]
+WantedBy=multi-user.target

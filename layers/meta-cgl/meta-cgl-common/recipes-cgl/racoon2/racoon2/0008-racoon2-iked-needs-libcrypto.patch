@@ -1,0 +1,24 @@
+From d5188281f7b83cc0fea3b2582cbd3f36f24df8a8 Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Wed, 18 Mar 2020 18:52:49 +0000
+Subject: [PATCH 08/13] racoon2-iked-needs-libcrypto
+
+---
+ iked/Makefile.am | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/iked/Makefile.am b/iked/Makefile.am
+index 6ea188d..ad40af5 100644
+--- a/iked/Makefile.am
++++ b/iked/Makefile.am
+@@ -24,6 +24,6 @@ IKEV2_NATT_SRC = nattraversal.c
+ iked_SOURCES = main.c dh.c ike_sa.c ike_conf.c isakmp.c authenticator.c encryptor.c crypto_openssl.c str2val.c keyed_hash.c sockmisc.c ike_pfkey.c ike_spmif.c schedule.c ratelimit.c script.c rtsock.c ${IKEV1_SRC} ${IKEV2_SRC} ${IKEV1_NATT_SRC} ${IKEV2_NATT_SRC}
+ sbin_PROGRAMS=iked
+ 
+-LIBS = @LIBS@
++LIBS = @LIBS@ -lcrypto
+ 
+ man_MANS = iked.8
+-- 
+2.24.1
+

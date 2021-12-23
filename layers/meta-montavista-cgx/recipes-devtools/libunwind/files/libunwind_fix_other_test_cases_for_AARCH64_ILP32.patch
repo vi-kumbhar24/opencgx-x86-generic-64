@@ -1,0 +1,166 @@
+diff --git a/src/aarch64/Gcreate_addr_space.c b/src/aarch64/Gcreate_addr_space.c
+index f217adc..4bb1b7d 100644
+--- a/src/aarch64/Gcreate_addr_space.c
++++ b/src/aarch64/Gcreate_addr_space.c
+@@ -50,10 +50,12 @@ unw_create_addr_space (unw_accessors_t *a, int byte_order)
+   as->acc = *a;
+ 
+   /* Default to little-endian for AArch64. */
+-  if (byte_order == 0 || byte_order == __LITTLE_ENDIAN)
+-    as->big_endian = 0;
++  if (byte_order == 0)
++    as->big_endian = (__BYTE_ORDER == __BIG_ENDIAN);
+   else
+-    as->big_endian = 1;
++    as->big_endian = (__BYTE_ORDER == __BIG_ENDIAN);
++
++  as->addr_size = sizeof (void *);
+ 
+   return as;
+ #endif
+diff --git a/src/aarch64/Gget_proc_info.c b/src/aarch64/Gget_proc_info.c
+index c363d24..bfc6bc6 100644
+--- a/src/aarch64/Gget_proc_info.c
++++ b/src/aarch64/Gget_proc_info.c
+@@ -30,9 +30,20 @@ unw_get_proc_info (unw_cursor_t *cursor, unw_proc_info_t *pi)
+   struct cursor *c = (struct cursor *) cursor;
+   int ret;
+ 
++  /* We can only unwind using Dwarf into on AArch64: return failure code
++     if it's not present.  */
+   ret = dwarf_make_proc_info (&c->dwarf);
++
+   if (ret < 0)
+-    return ret;
++    {
++      /* On AArch64, it's relatively common to be missing DWARF unwind
++         info.  We don't want to fail in that case, because the 
++         frame-chain still would let us do a backtrace at least. */
++      memset (pi, 0, sizeof (*pi));
++      pi->start_ip = c->dwarf.ip;
++      pi->end_ip = c->dwarf.ip + 1;
++      return 0;
++    }
+ 
+   *pi = c->dwarf.pi;
+   return 0;
+diff --git a/src/coredump/_UCD_internal.h b/src/coredump/_UCD_internal.h
+index 21ed1c3..b8e9f32 100644
+--- a/src/coredump/_UCD_internal.h
++++ b/src/coredump/_UCD_internal.h
+@@ -110,13 +110,74 @@ struct coredump_phdr
+ typedef struct coredump_phdr coredump_phdr_t;
+ 
+ #if defined(HAVE_STRUCT_ELF_PRSTATUS)
++#if defined(__aarch64__) && !defined(__LP64__)
++/* Defining elf_prstatus_temp as PRSTATUS_STRUCT.
++   The structure elf_prstatus_temp is same as elf_prstatus structure,
++   except the parameters of timeval structure (i.e tv_sec, tv_nsec) are
++   defined as long instead of "long long" and general purpose register size
++   is 64bit.
++   This thing is done as coredump file populates tv_sec and tv_nsec values 
++   as long instead of long long.
++*/ 
++#define PRSTATUS_STRUCT elf_prstatus_temp
++#else
+ #define PRSTATUS_STRUCT elf_prstatus
++#endif /* defined(__aarch64__) && !defined(__LP64__) */
+ #elif defined(HAVE_STRUCT_PRSTATUS)
+ #define PRSTATUS_STRUCT prstatus
+ #else
+ #define PRSTATUS_STRUCT non_existent
+ #endif
+ 
++/* For AArch64 ILP32, we have general purpose registers of size 64bit.
++   But in /usr/include/sys/procfs.h, the register sizes are considered as 32bit.
++
++(snip)
++40 #ifdef __LP64__
++41 typedef unsigned long elf_greg_t;
++42 #else
++43 __extension__ typedef unsigned long elf_greg_t;
++44 #endif
++(snip)
++
++49 #define ELF_NGREG (sizeof (struct user_regs_struct) / sizeof(elf_greg_t))
++50 typedef elf_greg_t elf_gregset_t[ELF_NGREG];
++-- CUT --
++
++  with these contents we going to get incorrect values for IP and SP, 
++  as the required values has been stored at different offsets of elf_gregset_t.
++  The below change defines elf_prstatus_temp, a replica of elf_prstatus, 
++  but the registers size is of 64bit and tv_sec and tv_nsec is defined as 
++  long. */
++
++#if defined(__aarch64__) && !defined(__LP64__)
++struct timeval_temp 
++  {
++    long int tv_sec;
++    long int tv_nsec;
++  };
++  
++typedef unsigned long long elf_greg_temp_t;
++typedef elf_greg_temp_t elf_gregset_temp_t[(sizeof (struct user_regs_struct) / sizeof(unsigned long long))];
++struct elf_prstatus_temp
++  {
++    struct elf_siginfo pr_info;
++    short int pr_cursig;
++    unsigned long pr_sigpend;
++    unsigned long pr_sighold;
++    __pid_t pr_pid;
++    __pid_t pr_ppid;
++    __pid_t pr_pgrp;
++    __pid_t pr_sid;
++    struct timeval_temp pr_utime;
++    struct timeval_temp pr_stime;
++    struct timeval_temp pr_cutime;
++    struct timeval_temp pr_cstime;
++    elf_gregset_temp_t pr_reg;
++    int pr_fpvalid;
++  };
++#endif /* defined(__aarch64__) && !defined(__LP64__) */
++
+ struct UCD_info
+   {
+     int big_endian;  /* bool */
+diff --git a/src/ptrace/_UPT_access_reg.c b/src/ptrace/_UPT_access_reg.c
+index ce25c78..1ecf167 100644
+--- a/src/ptrace/_UPT_access_reg.c
++++ b/src/ptrace/_UPT_access_reg.c
+@@ -33,6 +33,9 @@ WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.  */
+ # endif
+ # include "tdep-ia64/rse.h"
+ #endif
++#if defined(__aarch64__)
++#include <asm/ptrace.h>
++#endif /* defined(__aarch64__) */
+ 
+ #if HAVE_DECL_PTRACE_SETREGSET
+ #include <sys/uio.h>
+@@ -288,7 +291,26 @@ _UPT_access_reg (unw_addr_space_t as, unw_regnum_t reg, unw_word_t *val,
+     Debug(16, "ptrace PEEKUSER pid: %lu , reg: %lu , offs: %lu\n", (unsigned long)pid, (unsigned long)reg,
+         (unsigned long)_UPT_reg_offset[reg]);
+ #endif
++    /* For some reasons in kernel, we are not able to get the
++       contents of a particular general purpose register via
++       PTRACE_PEEKUSER (the call terminates with EIO (Input/Output error).
++       Instead we are getting full contents of general purpose register 
++       set via PTRACE_GETREGSET, and selecting only the reguired register.
++       This logic is taken from strace code. */    
++#if defined(__aarch64__)
++    struct user_pt_regs aarch64_regs;
++    struct iovec io;
++    char buf[sizeof(aarch64_regs)];
++    io.iov_base = &buf;
++    io.iov_len = sizeof(aarch64_regs);
++    if(ptrace(PTRACE_GETREGSET, pid, NT_PRSTATUS, (void *) &io) == -1)
++      return -1;
++    memcpy(&aarch64_regs, buf, sizeof(aarch64_regs));
++    *val = aarch64_regs.regs[reg];
++#else
+     *val = ptrace (PTRACE_PEEKUSER, pid, _UPT_reg_offset[reg], 0);
++#endif /* defined(__aarch64__) */
++
+   }
+   if (errno) {
+ #if UNW_DEBUG

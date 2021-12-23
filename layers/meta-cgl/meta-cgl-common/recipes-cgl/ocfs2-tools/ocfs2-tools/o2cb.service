@@ -1,0 +1,12 @@
+[Unit]
+Description=Load O2CB cluster services
+After=network.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=@LIBDIR@/o2cb-helper start
+ExecStop=@LIBDIR@/o2cb-helper stop
+
+[Install]
+WantedBy=multi-user.target

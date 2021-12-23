@@ -1,0 +1,40 @@
+From 402b08013138f6e00a18fbddaba8c801f472b5d6 Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Wed, 18 Mar 2020 18:49:16 +0000
+Subject: [PATCH 06/13] racoon2-fix-sadb_msg_seq-collision
+
+---
+ iked/ike_pfkey.c | 10 +++++++++-
+ 1 file changed, 9 insertions(+), 1 deletion(-)
+
+diff --git a/iked/ike_pfkey.c b/iked/ike_pfkey.c
+index e3763ef..f594c8c 100644
+--- a/iked/ike_pfkey.c
++++ b/iked/ike_pfkey.c
+@@ -130,6 +130,7 @@ static SADB_LIST_HEAD(sadb_request_list_head, sadb_request) sadb_request_list_he
+ static int pfkey_socket;
+ static uint32_t sadb_msg_seq = 0x4000000;	/* arbitrary large number to avoid collision with kernel message */
+ 
++static struct sadb_request *sadb_find_by_seq(uint32_t seq);
+ static int sadb_getspi_callback(struct rcpfk_msg *param);
+ static int sadb_update_callback(struct rcpfk_msg *param);
+ static int sadb_get_callback(struct rcpfk_msg *param);
+@@ -206,7 +207,14 @@ sadb_socket(void)
+ uint32_t
+ sadb_new_seq(void)
+ {
+-	return ++sadb_msg_seq;
++	while (1) {
++		/* make sure there is no existing request having
++		   the same seq number */
++		if (!sadb_find_by_seq(++sadb_msg_seq))
++			break;
++	}
++
++	return sadb_msg_seq;
+ }
+ 
+ static void
+-- 
+2.24.1
+

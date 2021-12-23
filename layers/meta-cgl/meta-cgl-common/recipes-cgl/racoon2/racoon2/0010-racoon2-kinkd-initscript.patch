@@ -1,0 +1,46 @@
+From 3b30f7dbe0b29ea495e7d52620cc36bc91d2a5bc Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Wed, 18 Mar 2020 19:01:36 +0000
+Subject: [PATCH 10/13] racoon2-kinkd-initscript
+
+---
+ samples/init.d/kinkd.in | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/samples/init.d/kinkd.in b/samples/init.d/kinkd.in
+index 5c8a7c5..8464aaa 100644
+--- a/samples/init.d/kinkd.in
++++ b/samples/init.d/kinkd.in
+@@ -3,6 +3,9 @@
+ # kinkd start up script
+ #
+ 
++# Source function library.
++[ -e /etc/init.d/functions ] && . /etc/init.d/functions
++
+ NAME=kinkd
+ DAEMON=@sbindir@/$NAME
+ PIDFILE=/var/run/$NAME.pid
+@@ -22,6 +25,10 @@ stop)
+ 	read pid junk < $PIDFILE && kill $pid
+ 	echo "."
+ 	;;
++  status)
++	status $DAEMON;
++	exit $?
++	;;
+ restart)
+ 	$0 stop
+ 	$0 start
+@@ -32,7 +39,7 @@ reload)
+ 	echo "."
+ 	;;
+ *)
+-	echo "usage: $0 {start|stop|restart|reload}"
++	echo "usage: $0 {start|stop|status|restart|reload}"
+ 	exit 1
+ 	;;
+ esac
+-- 
+2.24.1
+

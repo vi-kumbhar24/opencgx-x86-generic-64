@@ -1,0 +1,30 @@
+From 426f06cc088d11d6db0c45b434e5ce6b69da78b4 Mon Sep 17 00:00:00 2001
+From: Chris Lumens <clumens@redhat.com>
+Date: Thu, 2 Jan 2020 15:08:58 -0500
+Subject: [PATCH 006/207] Fix: tools: Fix definition of curses_indented_printf.
+
+The placeholder version that is built if curses is not enabled does not
+have a type that matches the header file.  Correct that.
+
+Signed-off-by: Jeremy A. Puhlman <jpuhlman@mvista.com>
+Upstream-Status: Backport[git]
+---
+ tools/crm_mon_curses.c | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/tools/crm_mon_curses.c b/tools/crm_mon_curses.c
+index c0dbedbf0..ecd0584fe 100644
+--- a/tools/crm_mon_curses.c
++++ b/tools/crm_mon_curses.c
+@@ -368,7 +368,7 @@ curses_indented_vprintf(pcmk__output_t *out, const char *format, va_list args) {
+ 
+ G_GNUC_PRINTF(2, 3)
+ void
+-curses_indented_printf(pcmk__output_t *out, const char *format, va_list args) {
++curses_indented_printf(pcmk__output_t *out, const char *format, ...) {
+     return;
+ }
+ 
+-- 
+2.23.0
+

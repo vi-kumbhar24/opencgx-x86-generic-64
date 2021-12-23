@@ -1,0 +1,4 @@
+export PATH=/home/vivek/git_can/opencgx-x86-generic-64/buildtools/sysroots/x86_64-montavistasdk-linux/usr/bin:$PATH
+#OECORE_NATIVE_SYSROOT="/home/vivek/git_can/opencgx-x86-generic-64/buildtools/sysroots/x86_64-montavistasdk-linux"
+export GIT_SSL_CAINFO="/home/vivek/git_can/opencgx-x86-generic-64/buildtools/sysroots/x86_64-montavistasdk-linux/etc/ssl/certs/ca-certificates.crt"
+export OPENSSL_CONF="/home/vivek/git_can/opencgx-x86-generic-64/buildtools/sysroots/x86_64-montavistasdk-linux/etc/ssl/openssl.cnf"

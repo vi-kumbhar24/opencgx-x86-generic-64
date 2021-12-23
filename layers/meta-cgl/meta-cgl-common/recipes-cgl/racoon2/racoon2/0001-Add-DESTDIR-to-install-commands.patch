@@ -1,0 +1,163 @@
+From 56198a5bbe5380f53d75f5a5ea2e31714460fcd2 Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Tue, 17 Mar 2020 21:11:28 +0000
+Subject: [PATCH 01/13] Add DESTDIR to install commands.
+
+---
+ pskgen/Makefile.am                    |  2 +-
+ samples/Makefile.am                   | 24 ++++++++++----------
+ samples/hook/Makefile.am              | 32 +++++++++++++--------------
+ samples/hook/child-down.d/Makefile.am |  8 +++----
+ samples/hook/child-up.d/Makefile.am   | 10 ++++-----
+ samples/hook/ikesa-up.d/Makefile.am   |  4 ++--
+ samples/init.d/Makefile.am            |  8 +++----
+ 7 files changed, 44 insertions(+), 44 deletions(-)
+
+diff --git a/pskgen/Makefile.am b/pskgen/Makefile.am
+index c7e8b78..998582f 100644
+--- a/pskgen/Makefile.am
++++ b/pskgen/Makefile.am
+@@ -6,5 +6,5 @@ sbin_SCRIPTS=pskgen
+ man_MANS=pskgen.8
+ 
+ install-exec-hook:
+-	$(INSTALL) -d $(sysconfdir)
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)
+ 	sh ./autogen.spmd.pwd
+diff --git a/samples/Makefile.am b/samples/Makefile.am
+index 56250cd..4e79e2d 100644
+--- a/samples/Makefile.am
++++ b/samples/Makefile.am
+@@ -6,15 +6,15 @@ SUBDIRS = @startup_scripts@ hook
+ 
+ install-exec-hook:
+ 	$(INSTALL) -d -o 0 -g 0 -m 700 $(DESTDIR)/var/run/racoon2
+-	$(INSTALL) -d $(sysconfdir)
+-	$(INSTALL) -m 600 racoon2.conf $(sysconfdir)/racoon2.conf.sample
+-	$(INSTALL) -m 600 vals.conf $(sysconfdir)/vals.conf.sample
+-	$(INSTALL) -m 600 default.conf $(sysconfdir)/default.conf.sample
+-	$(INSTALL) -m 600 transport_ike.conf $(sysconfdir)/transport_ike.conf.sample
+-	$(INSTALL) -m 600 tunnel_ike.conf $(sysconfdir)/tunnel_ike.conf.sample
+-	$(INSTALL) -m 600 tunnel_ike_natt.conf $(sysconfdir)/tunnel_ike_natt.conf.sample
+-	$(INSTALL) -m 600 transport_kink.conf $(sysconfdir)/transport_kink.conf.sample
+-	$(INSTALL) -m 600 tunnel_kink.conf $(sysconfdir)/tunnel_kink.conf.sample
+-	$(INSTALL) -m 600 local-test.conf $(sysconfdir)/local-test.conf.sample
+-	$(INSTALL) -d -m 700 $(sysconfdir)/psk
+-	$(INSTALL) -d -m 700 $(sysconfdir)/cert
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)
++	$(INSTALL) -m 600 racoon2.conf $(DESTDIR)$(sysconfdir)/racoon2.conf.sample
++	$(INSTALL) -m 600 vals.conf $(DESTDIR)$(sysconfdir)/vals.conf.sample
++	$(INSTALL) -m 600 default.conf $(DESTDIR)$(sysconfdir)/default.conf.sample
++	$(INSTALL) -m 600 transport_ike.conf $(DESTDIR)$(sysconfdir)/transport_ike.conf.sample
++	$(INSTALL) -m 600 tunnel_ike.conf $(DESTDIR)$(sysconfdir)/tunnel_ike.conf.sample
++	$(INSTALL) -m 600 tunnel_ike_natt.conf $(DESTDIR)$(sysconfdir)/tunnel_ike_natt.conf.sample
++	$(INSTALL) -m 600 transport_kink.conf $(DESTDIR)$(sysconfdir)/transport_kink.conf.sample
++	$(INSTALL) -m 600 tunnel_kink.conf $(DESTDIR)$(sysconfdir)/tunnel_kink.conf.sample
++	$(INSTALL) -m 600 local-test.conf $(DESTDIR)$(sysconfdir)/local-test.conf.sample
++	$(INSTALL) -d -m 700 $(DESTDIR)$(sysconfdir)/psk
++	$(INSTALL) -d -m 700 $(DESTDIR)$(sysconfdir)/cert
+diff --git a/samples/hook/Makefile.am b/samples/hook/Makefile.am
+index d3fabdb..f53a1f5 100644
+--- a/samples/hook/Makefile.am
++++ b/samples/hook/Makefile.am
+@@ -5,19 +5,19 @@ ACLOCAL_AMFLAGS = -I m4
+ SUBDIRS = child-down.d child-up.d ikesa-up.d
+ 
+ install-exec-hook:
+-	$(INSTALL) -d $(sysconfdir)/hook
+-	$(INSTALL_DATA) functions $(sysconfdir)/hook
+-	$(INSTALL) -d $(sysconfdir)/hook/ikesa-up.d
+-	$(INSTALL_SCRIPT) ikesa-up $(sysconfdir)/hook
+-	$(INSTALL) -d $(sysconfdir)/hook/ikesa-down.d
+-	$(INSTALL_SCRIPT) ikesa-down $(sysconfdir)/hook
+-	$(INSTALL) -d $(sysconfdir)/hook/ikesa-rekey.d
+-	$(INSTALL_SCRIPT) ikesa-rekey $(sysconfdir)/hook
+-	$(INSTALL) -d $(sysconfdir)/hook/child-up.d
+-	$(INSTALL_SCRIPT) child-up $(sysconfdir)/hook
+-	$(INSTALL) -d $(sysconfdir)/hook/child-down.d
+-	$(INSTALL_SCRIPT) child-down $(sysconfdir)/hook
+-	$(INSTALL) -d $(sysconfdir)/hook/child-rekey.d
+-	$(INSTALL_SCRIPT) child-rekey $(sysconfdir)/hook
+-	$(INSTALL) -d $(sysconfdir)/hook/migration.d
+-	$(INSTALL_SCRIPT) migration $(sysconfdir)/hook
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook
++	$(INSTALL_DATA) functions $(DESTDIR)$(sysconfdir)/hook
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/ikesa-up.d
++	$(INSTALL_SCRIPT) ikesa-up $(DESTDIR)$(sysconfdir)/hook
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/ikesa-down.d
++	$(INSTALL_SCRIPT) ikesa-down $(DESTDIR)$(sysconfdir)/hook
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/ikesa-rekey.d
++	$(INSTALL_SCRIPT) ikesa-rekey $(DESTDIR)$(sysconfdir)/hook
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/child-up.d
++	$(INSTALL_SCRIPT) child-up $(DESTDIR)$(sysconfdir)/hook
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/child-down.d
++	$(INSTALL_SCRIPT) child-down $(DESTDIR)$(sysconfdir)/hook
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/child-rekey.d
++	$(INSTALL_SCRIPT) child-rekey $(DESTDIR)$(sysconfdir)/hook
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/migration.d
++	$(INSTALL_SCRIPT) migration $(DESTDIR)$(sysconfdir)/hook
+diff --git a/samples/hook/child-down.d/Makefile.am b/samples/hook/child-down.d/Makefile.am
+index ff8d741..bb28ff7 100644
+--- a/samples/hook/child-down.d/Makefile.am
++++ b/samples/hook/child-down.d/Makefile.am
+@@ -3,7 +3,7 @@
+ ACLOCAL_AMFLAGS = -I m4
+ 
+ install-exec-hook:
+-	$(INSTALL) -d $(sysconfdir)/hook/child-down.d
+-	$(INSTALL_DATA) 01setkey $(sysconfdir)/hook/child-down.d
+-	$(INSTALL_DATA) 02ifconfig-gif $(sysconfdir)/hook/child-down.d
+-	$(INSTALL_DATA) 03arp $(sysconfdir)/hook/child-down.d
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/child-down.d
++	$(INSTALL_DATA) 01setkey $(DESTDIR)$(sysconfdir)/hook/child-down.d
++	$(INSTALL_DATA) 02ifconfig-gif $(DESTDIR)$(sysconfdir)/hook/child-down.d
++	$(INSTALL_DATA) 03arp $(DESTDIR)$(sysconfdir)/hook/child-down.d
+diff --git a/samples/hook/child-up.d/Makefile.am b/samples/hook/child-up.d/Makefile.am
+index 71d03c9..9c9bbea 100644
+--- a/samples/hook/child-up.d/Makefile.am
++++ b/samples/hook/child-up.d/Makefile.am
+@@ -3,8 +3,8 @@
+ ACLOCAL_AMFLAGS = -I m4
+ 
+ install-exec-hook:
+-	$(INSTALL) -d $(sysconfdir)/hook/child-up.d
+-	$(INSTALL_DATA) 00childup_sample $(sysconfdir)/hook/child-up.d
+-	$(INSTALL_DATA) 01setkey $(sysconfdir)/hook/child-up.d
+-	$(INSTALL_DATA) 02ifconfig-gif $(sysconfdir)/hook/child-up.d
+-	$(INSTALL_DATA) 03arp $(sysconfdir)/hook/child-up.d
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/child-up.d
++	$(INSTALL_DATA) 00childup_sample $(DESTDIR)$(sysconfdir)/hook/child-up.d
++	$(INSTALL_DATA) 01setkey $(DESTDIR)$(sysconfdir)/hook/child-up.d
++	$(INSTALL_DATA) 02ifconfig-gif $(DESTDIR)$(sysconfdir)/hook/child-up.d
++	$(INSTALL_DATA) 03arp $(DESTDIR)$(sysconfdir)/hook/child-up.d
+diff --git a/samples/hook/ikesa-up.d/Makefile.am b/samples/hook/ikesa-up.d/Makefile.am
+index f117004..dba63ba 100644
+--- a/samples/hook/ikesa-up.d/Makefile.am
++++ b/samples/hook/ikesa-up.d/Makefile.am
+@@ -3,5 +3,5 @@
+ ACLOCAL_AMFLAGS = -I m4
+ 
+ install-exec-hook:
+-	$(INSTALL) -d $(sysconfdir)/hook/ikesa-up.d
+-	$(INSTALL_DATA) 00ikesaup_sample $(sysconfdir)/hook/ikesa-up.d
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/hook/ikesa-up.d
++	$(INSTALL_DATA) 00ikesaup_sample $(DESTDIR)$(sysconfdir)/hook/ikesa-up.d
+diff --git a/samples/init.d/Makefile.am b/samples/init.d/Makefile.am
+index 805c8eb..debe439 100644
+--- a/samples/init.d/Makefile.am
++++ b/samples/init.d/Makefile.am
+@@ -3,7 +3,7 @@
+ ACLOCAL_AMFLAGS = -I m4
+ 
+ install-exec-hook:
+-	$(INSTALL) -d $(sysconfdir)/init.d
+-	$(INSTALL_SCRIPT) iked $(sysconfdir)/init.d/iked
+-	$(INSTALL_SCRIPT) kinkd $(sysconfdir)/init.d/kinkd
+-	$(INSTALL_SCRIPT) spmd $(sysconfdir)/init.d/spmd
++	$(INSTALL) -d $(DESTDIR)$(sysconfdir)/init.d
++	$(INSTALL_SCRIPT) iked $(DESTDIR)$(sysconfdir)/init.d/iked
++	$(INSTALL_SCRIPT) kinkd $(DESTDIR)$(sysconfdir)/init.d/kinkd
++	$(INSTALL_SCRIPT) spmd $(DESTDIR)$(sysconfdir)/init.d/spmd
+-- 
+2.24.1
+

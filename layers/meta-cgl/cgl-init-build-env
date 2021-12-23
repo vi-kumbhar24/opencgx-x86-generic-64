@@ -1,0 +1,267 @@
+#!/bin/bash
+if [ "$_" = "$0" ]; then
+    echo "Error: This script needs to be sourced."
+    echo "Please run as 'source $0'."
+    exit
+fi
+
+# always unset these in case something goes wrong in the previous run
+unset BBLAYERS_CONF_EXISTS
+unset BUILD_PATH
+unset CUSTOM_SCRIPTS
+unset DISTRO
+unset DOWNLOAD_DLDIR
+unset DOWNLOAD_MIRRORS
+unset CGLROOT
+unset EXITME
+unset LOCAL_CONF_EXISTS
+unset MACHINE
+unset METALAYERS
+unset NUM_CORES
+unset SSTATE_DIR
+unset SSTATE_MIRRORS
+unset TESTING_ADDITIONS
+unset -f usage
+unset OPTERR
+unset OPTIND
+unset OPTION
+
+NUM_CORES=$(grep -c processor /proc/cpuinfo || echo 2)
+BUILD_PATH="build"
+METALAYERS="meta-cgl/meta-cgl-common,meta-qt3,meta-selinux,meta-security,meta-virtualization"
+
+function usage() {
+cat <<EOF
+Usage:
+    source $(basename $BASH_SOURCE) [OPTIONS]
+
+OPTIONS:
+    -b <build dir>
+      Build dir
+      default: build
+
+    -c <script name>
+      Script to be used for further customization
+      Multiple executable customization scripts could be used
+      The customized script must have the executable bit set in order to be used
+      e.g. -c meta-some-layer/scripts/conf_setup.sh
+
+    -g <url>
+      download mirror e.g., file:///media/downloads
+      default: http://linux.enea.com
+
+    -j <cores>
+      Number of cores to use in build.
+      default: all
+
+    -k <sstate dir>
+      Shared local sstate cache, type -k <build dir>/sstate
+      if you want to use private sstate cache.
+
+    -l <list of meta-layers>
+      List of meta-layers, e.g., -l meta-fsl-ppc,meta-enea-lwrt
+      default: none
+
+    -m <machine name>
+      Machine name (required)
+
+    -t
+      To be used by testing framework.
+      Currently add the distrodata inheritance.
+    -s
+      Non-default DISTRO to use
+
+    -h
+      Help - this text
+EOF
+}
+
+#SSTATE_MIRRORS='http://linux.enea.com/${DISTRO_VERSION}/sstate-cache/PATH'
+
+while getopts ":hb:c:d:f:g:j:k:l:m:ts:" OPTION; do
+    case $OPTION in
+        b)
+            BUILD_PATH=$OPTARG
+            ;;
+        c)
+            CUSTOM_SCRIPTS=$CUSTOM_SCRIPTS" eval $PWD/$OPTARG;"
+            ;;
+        d)
+            # set DL_DIR. be careful when using this, as it's easy to
+            # introduce isseues if this dir is shared
+            DOWNLOAD_DLDIR=$(readlink -m $OPTARG)
+            ;;
+        g)
+            DOWNLOAD_MIRRORS=$OPTARG
+            ;;
+        j)
+            NUM_CORES=$OPTARG
+            ;;
+        k)
+            SSTATE_DIR=$(readlink -m $OPTARG)
+            ;;
+        l)
+            METALAYERS="$METALAYERS,$OPTARG"
+            ;;
+        m)
+            MACHINE=$OPTARG
+            ;;
+        t)
+            TESTING_ADDITIONS=1
+            ;;
+        s)
+            DISTRO=$OPTARG
+            ;;
+        h)
+            usage
+            EXITME=1
+            ;;
+        \?)
+            echo "Unknown option '-$OPTARG'"
+            usage
+            EXITME=1
+            ;;
+    esac
+done
+
+METALAYERS="$METALAYERS,meta-cloud-services,meta-cloud-services/meta-openstack,meta-openembedded/meta-filesystems,meta-openembedded/meta-networking,meta-openembedded/meta-oe,meta-openembedded/meta-perl,meta-openembedded/meta-python,meta-openembedded/meta-multimedia,meta-openembedded/meta-gnome,meta-openembedded/meta-xfce"
+CGLROOT="$(pwd)"
+CGLROOT=$(readlink -f "$CGLROOT")
+DISTRO="poky-cgl"
+
+if [[ ! -d $SSTATE_DIR && ! -z $SSTATE_DIR ]]; then
+    mkdir -p $SSTATE_DIR
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Unable to create directory $SSTATE_DIR. Do you have permissions?"
+        EXITME=1
+    fi
+fi
+if [[ ! -d $DOWNLOAD_DLDIR && ! -z $DOWNLOAD_DLDIR ]]; then
+    mkdir -p $DOWNLOAD_DLDIR
+    if [[ $? -ne 0 ]]; then
+        echo "Error: Unable to create directory $DOWNLOAD_DLDIR. Do you have permissions?"
+        EXITME=1
+    fi
+fi
+
+if [[ -n $EXITME ]]; then
+    echo
+elif [[ -z $BASH_VERSINFO ]]; then
+    echo "This script requires bash."
+elif [ "$MACHINE"x = "x" -a ! -r "$BUILD_PATH/conf/local.conf" ]; then
+cat <<EOF
+error: When creating a new build dir, you must at least specify -m MACHINE.
+
+Use option -h for help.
+EOF
+else
+
+    if ! (test -r "$BUILD_PATH/conf/local.conf"); then
+        LOCAL_CONF_EXISTS=1
+    fi
+
+    if ! (test -r "$BUILD_PATH/conf/bblayers.conf"); then
+        BBLAYERS_CONF_EXISTS=1
+    fi
+
+    source ./oe-init-build-env $BUILD_PATH
+
+    if [[ -n $LOCAL_CONF_EXISTS ]]; then
+## Commenting this since this is not mandatory since latest Yocto releases.
+#        sed -i \
+#            -e "s|^#BB_NUMBER_THREADS.*|BB_NUMBER_THREADS \?= \"$NUM_CORES\"|" \
+#            -e "s|^#PARALLEL_MAKE.*|PARALLEL_MAKE \?= \"-j $NUM_CORES\"|" \
+#            conf/local.conf
+#        echo "*** Info: Setting BB_NUMBER_THREADS to $NUM_CORES"
+#        echo "*** Info: Setting PARALLEL_MAKE to -j$NUM_CORES"
+
+        if [[ -n $MACHINE ]]; then
+            sed -i -e "s|^MACHINE.*|MACHINE = \"$MACHINE\"|" conf/local.conf
+            echo "*** Info: Setting MACHINE to $MACHINE"
+        fi
+
+#        echo "SSTATE_MIRRORS ?= \"file://.* $SSTATE_MIRRORS\"" >> conf/local.conf
+#        echo "*** Info: Setting SSTATE_MIRRORS to http://linux.enea.com"
+
+        if [[ -n $SSTATE_DIR ]]; then
+            sed -i -e "s|^#SSTATE_DIR ?=.*|SSTATE_DIR ?= \"$SSTATE_DIR\"|" conf/local.conf
+            echo "*** Info: Setting SSTATE_DIR to $SSTATE_DIR"
+        fi
+
+#        sed -i -e 's|^PACKAGE_CLASSES ?= "package_rpm"|PACKAGE_CLASSES ?= "package_ipk"|' conf/local.conf
+#        echo "*** Info: Setting PACKAGE_CLASSES to ipk"
+
+#        echo "SOURCE_MIRROR_URL ?= \"$DOWNLOAD_MIRRORS\"" >> conf/local.conf
+#        echo "INHERIT += \"own-mirrors\"" >> conf/local.conf
+#        echo "*** Info: Setting SOURCE_MIRROR_URL to http://linux.enea.com"
+
+#        if [[ -n $TESTING_ADDITIONS ]]; then
+#            echo "INHERIT += \"distrodata\"" >> conf/local.conf
+#            echo "*** Info: Inheriting  distrodata."
+#        fi
+
+#        echo -e '\nLICENSE_FLAGS_WHITELIST += "non-commercial"\n' >> conf/local.conf
+#        echo "*** Info: Need to set LICENSE_FLAGS_WHITELIST for netperf"
+
+         if [[ -n $DISTRO ]]; then
+            sed -i -e "s|^DISTRO.*|DISTRO ?= \"$DISTRO\"|" conf/local.conf
+            sed -i -e 's|^PACKAGE_CLASSES ?= "package_ipk"|PACKAGE_CLASSES ?= "package_rpm package_ipk"|' conf/local.conf
+            echo "*** Info: Setting PACKAGE_CLASSES to rpm"
+            echo "*** Info: Setting DISTRO to $DISTRO "
+        fi
+
+
+        if [[ -n $DOWNLOAD_DLDIR ]]; then
+            sed -i -e "s|^#DL_DIR ?=.*|DL_DIR ?= \"$DOWNLOAD_DLDIR\"|" conf/local.conf
+            echo "*** Info: Setting DL_DIR to $DOWNLOAD_DLDIR"
+        fi
+
+        if [[ ""x != "${CUSTOM_SCRIPTS}"x ]]; then
+            echo "*** Info: Appying \"${CUSTOM_SCRIPTS}\""
+            ${CUSTOM_SCRIPTS}
+        fi
+
+        sed '$ a\BBMASK="meta-security/recipes-security/libcap-ng"' -i $BUILD_PATH/conf/local.conf
+        echo "*** Info: Setting BBMASK to meta-security/recipes-security/libcap-ng"
+
+    else
+        echo "You already had conf/local.conf file, no modification is done."
+    fi
+
+    if [[ -n $BBLAYERS_CONF_EXISTS ]]; then
+        if [[ ""x != "${METALAYERS}"x ]]; then
+            for layer in $(echo $METALAYERS | tr ',' ' '); do
+                layer=$CGLROOT/$layer
+                if [[ ! -d $layer ]]; then
+                    echo "*** Error: There is no meta-layer called: $layer"
+                else
+                    egrep "$layer " conf/bblayers.conf >/dev/null ||
+                    sed -i -e '/.*meta-poky .*/i\'"  $layer \\\\" conf/bblayers.conf
+                    echo "*** Info: Adding $layer to bblayers.conf"
+                fi
+            done
+        fi
+    else
+        echo "You already had conf/bblayers.conf file, no modification is done."
+    fi
+fi
+
+unset BBLAYERS_CONF_EXISTS
+unset BUILD_PATH
+unset CUSTOM_SCRIPTS
+unset DISTRO
+unset DOWNLOAD_DLDIR
+unset DOWNLOAD_MIRRORS
+unset CGLROOT
+unset EXITME
+unset LOCAL_CONF_EXISTS
+unset MACHINE
+unset METALAYERS
+unset NUM_CORES
+unset SSTATE_DIR
+unset SSTATE_MIRRORS
+unset TESTING_ADDITIONS
+unset -f usage
+unset OPTERR
+unset OPTIND
+unset OPTION

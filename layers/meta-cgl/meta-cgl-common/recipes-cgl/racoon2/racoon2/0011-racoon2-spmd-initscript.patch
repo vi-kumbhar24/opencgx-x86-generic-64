@@ -1,0 +1,44 @@
+From e85641dcabe8cac0fb5b6df9d2678ed4f5a28942 Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Wed, 18 Mar 2020 19:06:54 +0000
+Subject: [PATCH 11/13] racoon2-spmd-initscript
+
+---
+ samples/init.d/spmd.in | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/samples/init.d/spmd.in b/samples/init.d/spmd.in
+index f73e13a..04be055 100644
+--- a/samples/init.d/spmd.in
++++ b/samples/init.d/spmd.in
+@@ -1,5 +1,8 @@
+ #! /bin/sh
+ 
++# Source function library.
++[ -e /etc/init.d/function ] && . /etc/init.d/functions
++
+ DAEMON=@sbindir@/spmd
+ DAEMON_OPT=""
+ NAME="spmd"
+@@ -23,13 +26,17 @@ case "$1" in
+ 	$DAEMON -k
+ 	echo "."
+ 	;;
++  status)
++	status $DAEMON;
++	exit $?
++	;;
+   restart|force-reload)
+   	$0 stop
+ 	$0 start
+ 	;;
+   *)
+ 	N=/etc/init.d/$NAME
+-	echo "Usage: $N {start|stop|restart|force-reload}" >&2
++	echo "Usage: $N {start|stop|status|restart|force-reload}" >&2
+ 	exit 1
+ 	;;
+ esac
+-- 
+2.24.1
+

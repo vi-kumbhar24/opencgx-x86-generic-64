@@ -1,0 +1,30 @@
+From bb73405684f5cfd62c10a80826a3140f96d032ae Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Wed, 18 Mar 2020 18:50:59 +0000
+Subject: [PATCH 07/13] racoon2-fwrite-return-value
+
+---
+ lib/cftoken.l | 7 +++++++
+ 1 file changed, 7 insertions(+)
+
+diff --git a/lib/cftoken.l b/lib/cftoken.l
+index abc2883..3305ad4 100644
+--- a/lib/cftoken.l
++++ b/lib/cftoken.l
+@@ -87,6 +87,13 @@ static char rcf_linebuf[CF_LINEBUFSIZE];
+ 	}
+ #else
+ #define DP
++#endif
++
++#ifndef ECHO
++/* This used to be an fputs(), but since the string might contain NUL's,
++ * we now use fwrite().
++ */
++#define ECHO do { if (fwrite( yytext, yyleng, 1, yyout )) {} } while (0)
+ #endif
+ 
+ 	/* the include files stack */
+-- 
+2.24.1
+

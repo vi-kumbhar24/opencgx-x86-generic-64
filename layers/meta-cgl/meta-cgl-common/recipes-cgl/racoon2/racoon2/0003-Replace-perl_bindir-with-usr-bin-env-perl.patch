@@ -1,0 +1,22 @@
+From 0fce50be1c7c39b43d9cb5fceaacf1c7c235d2a1 Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Tue, 17 Mar 2020 22:09:52 +0000
+Subject: [PATCH 03/13] Replace perl_bindir with /usr/bin/env perl
+
+---
+ pskgen/pskgen.in | 2 +-
+ 1 file changed, 1 insertion(+), 1 deletion(-)
+
+diff --git a/pskgen/pskgen.in b/pskgen/pskgen.in
+index 150baef..d2aa8e0 100755
+--- a/pskgen/pskgen.in
++++ b/pskgen/pskgen.in
+@@ -1,4 +1,4 @@
+-#!@perl_bindir@
++#!/usr/bin/env perl
+ 
+ # Copyright (C) 2004, 2005 WIDE Project.
+ # All rights reserved.
+-- 
+2.24.1
+

@@ -1,0 +1,4 @@
+/* GNU ld script
+*/
+OUTPUT_FORMAT(elf64-x86-64)
+GROUP ( /home/vivek/git_can/opencgx-x86-generic-64/buildtools/sysroots/x86_64-montavistasdk-linux/lib/libm.so.6  AS_NEEDED ( /home/vivek/git_can/opencgx-x86-generic-64/buildtools/sysroots/x86_64-montavistasdk-linux/lib/libmvec.so.1 ) )

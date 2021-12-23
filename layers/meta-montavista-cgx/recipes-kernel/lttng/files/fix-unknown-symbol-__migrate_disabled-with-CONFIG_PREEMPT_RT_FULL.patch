@@ -1,0 +1,47 @@
+Set __migrate_disabled(current) to "current->migrate_disable" if both
+CONFIG_SMP and CONFIG_PREEMPT_COUNT configs are defined, otherwise
+set it to 0. This is the same settings done in linux kernel source.
+
+It solves below error, when target is booted with CONFIG_PREEMPT_RT_FULL
+
+-- snip --
+lttng_tracer: Unknown symbol __migrate_disabled (err 0
+-- snip --
+
+---
+ lttng-context-migratable.c | 12 ++++++++++--
+ 1 file changed, 10 insertions(+), 2 deletions(-)
+
+diff --git a/lttng-context-migratable.c b/lttng-context-migratable.c
+index c886195..6f2fa98 100644
+--- a/lttng-context-migratable.c
++++ b/lttng-context-migratable.c
+@@ -44,7 +44,11 @@ void migratable_record(struct lttng_ctx_field *field,
+ 		struct lib_ring_buffer_ctx *ctx,
+ 		struct lttng_channel *chan)
+ {
+-	uint8_t migratable = !current->migrate_disable;
++#if defined(CONFIG_PREEMPT_COUNT) && defined(CONFIG_SMP)
++	uint8_t migratable = !(current->migrate_disable);
++#else
++	uint8_t migratable = !0;
++#endif
+ 
+ 	lib_ring_buffer_align_ctx(ctx, lttng_alignof(migratable));
+ 	chan->ops->event_write(ctx, &migratable, sizeof(migratable));
+@@ -55,7 +59,11 @@ void migratable_get_value(struct lttng_ctx_field *field,
+ 		struct lttng_probe_ctx *lttng_probe_ctx,
+ 		union lttng_ctx_value *value)
+ {
+-	value->s64 = !current->migrate_disable;
++#if defined(CONFIG_PREEMPT_COUNT) && defined(CONFIG_SMP)
++	value->s64 = !(current->migrate_disable);
++#else
++	value->s64 = !0;
++#endif
+ }
+ 
+ int lttng_add_migratable_to_ctx(struct lttng_ctx **ctx)
+-- 
+2.11.1
+

@@ -1,0 +1,46 @@
+diff -Naurp hpitest-3.2.0_org/src/framework/LocationMgr.cc hpitest-3.2.0/src/framework/LocationMgr.cc
+--- hpitest-3.2.0_org/src/framework/LocationMgr.cc	2010-09-18 00:25:48.000000000 +0530
++++ hpitest-3.2.0/src/framework/LocationMgr.cc	2019-01-04 18:04:57.143804008 +0530
+@@ -17,6 +17,8 @@
+  * Author(s):
+  *     Donald A. Barre <dbarre@unh.edu>
+  */
++
++#include <cstdio>
+ #include <cstring>
+ #include <string.h>
+ 
+diff -Naurp hpitest-3.2.0_org/src/framework/UserPrompter.cc hpitest-3.2.0/src/framework/UserPrompter.cc
+--- hpitest-3.2.0_org/src/framework/UserPrompter.cc	2010-09-18 00:25:48.000000000 +0530
++++ hpitest-3.2.0/src/framework/UserPrompter.cc	2019-01-04 18:04:57.143804008 +0530
+@@ -20,6 +20,7 @@
+ 
+ #include <stdlib.h>
+ 
++#include <cstdio>
+ #include <cstring>
+ #include <iostream>
+ #include <limits>
+diff -Naurp hpitest-3.2.0_org/src/hpi/HpiString.cc hpitest-3.2.0/src/hpi/HpiString.cc
+--- hpitest-3.2.0_org/src/hpi/HpiString.cc	2010-09-18 00:25:48.000000000 +0530
++++ hpitest-3.2.0/src/hpi/HpiString.cc	2019-01-04 18:04:57.143804008 +0530
+@@ -24,6 +24,7 @@
+  * 	            enhancements to be HPI-B.03.01 compliant
+  */
+ 
++#include <cstdio>
+ #include <cstring>
+ 
+ #include "HpiString.h"
+diff -Naurp hpitest-3.2.0_org/src/tests/version/saHpiInitialize/InvalidData.cc hpitest-3.2.0/src/tests/version/saHpiInitialize/InvalidData.cc
+--- hpitest-3.2.0_org/src/tests/version/saHpiInitialize/InvalidData.cc	2010-09-18 00:26:00.000000000 +0530
++++ hpitest-3.2.0/src/tests/version/saHpiInitialize/InvalidData.cc	2019-01-04 18:04:57.143804008 +0530
+@@ -18,6 +18,8 @@
+  *     Lars Wetzel <larswetzel@users.sourceforge.net>
+  */
+ 
++#include <cstdlib>
++
+ #include "InvalidData.h"
+ #include <stdlib.h>
+ 

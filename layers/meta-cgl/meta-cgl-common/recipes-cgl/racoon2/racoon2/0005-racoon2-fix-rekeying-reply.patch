@@ -1,0 +1,25 @@
+From 506b9afae89e322f6a82736c3ea112c9b989f7e6 Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Wed, 18 Mar 2020 18:46:16 +0000
+Subject: [PATCH 05/13] racoon2-fix-rekeying-reply
+
+---
+ iked/ikev2.c | 2 ++
+ 1 file changed, 2 insertions(+)
+
+diff --git a/iked/ikev2.c b/iked/ikev2.c
+index 439d1b9..230f2f2 100644
+--- a/iked/ikev2.c
++++ b/iked/ikev2.c
+@@ -951,6 +951,8 @@ ikev2_initiator_start(struct ikev2_sa *ike_sa)
+ 	if (!pkt)
+ 		goto fail;
+ 
++	++ike_sa->request_pending;
++
+ 	/* save message data for AUTH calculation */
+ 	if (ike_sa->my_first_message)
+ 		rc_vfree(ike_sa->my_first_message);
+-- 
+2.24.1
+

@@ -1,0 +1,27 @@
+From 153a531d0cb85feca60b04832435a1925c5eaecc Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Wed, 18 Mar 2020 19:08:42 +0000
+Subject: [PATCH 12/13] racoon2-remove-deprecated-do-clause
+
+---
+ pskgen/pskgen.in | 4 ++--
+ 1 file changed, 2 insertions(+), 2 deletions(-)
+
+diff --git a/pskgen/pskgen.in b/pskgen/pskgen.in
+index d2aa8e0..06b449c 100755
+--- a/pskgen/pskgen.in
++++ b/pskgen/pskgen.in
+@@ -59,8 +59,8 @@ EOD
+ 	exit 0;
+ }
+ 
+-require Getopt::Std;
+-Getopt::Std::getopts('rs:o:di:he:d');
++use Getopt::Std;
++getopts('rs:o:di:he:d');
+ $output = '-';
+ $output = $opt_o if ($opt_o);
+ 
+-- 
+2.24.1
+

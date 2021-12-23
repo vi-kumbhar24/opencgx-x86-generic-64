@@ -1,0 +1,5 @@
+QATEST_DIR ?= "/opt"
+QATEST_BIN_DIR ?= "${QATEST_DIR}/mvtest"
+QATEST_RESULTS_DIR ?= "${QATEST_BIN_DIR}/results"
+QATEST_SUITES_DIR ?= "${QATEST_BIN_DIR}/suites"
+DIRFILES = "1"

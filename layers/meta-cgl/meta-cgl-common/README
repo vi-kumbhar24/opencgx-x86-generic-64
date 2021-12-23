@@ -1,0 +1,138 @@
+This README file contains information on the contents of the cgl layer.
+Please see the corresponding sections below for details.
+
+
+Dependencies
+============
+
+This layer depends on:
+
+  URI: git://git.yoctoproject.org/poky
+  branch: master
+
+  URI: git://git.openembedded.org/meta-openembedded
+  layers: meta-oe, meta-perl, meta-networking, meta-filesystems
+  branch: master
+
+  URI: git://git.yoctoproject.org/meta-cloud-services
+  layers: meta-openstack
+  branch: master
+
+  URI: git://git.yoctoproject.org/meta-qt3
+  branch: master
+
+  URI: git://git.yoctoproject.org/meta-selinux
+  branch: master
+
+  URI: git://git.yoctoproject.org/meta-security
+  branch: master
+
+  URI: git://git.yoctoproject.org/meta-virtualization
+  branch: master
+
+
+Source code
+===========
+
+git://git.yoctoproject.org/meta-cgl
+http://git.yoctoproject.org/git/meta-cgl
+
+
+Maintenance
+===========
+
+Maintainers:
+    Adrian Dudau <Adrian.Dudau@enea.com>
+    Alexandru Vaduva <alexandru.vaduva@linux.com>
+    Joe MacDonald <joe_macdonald@mentor.com>
+
+
+Contributing
+============
+
+Contributions and patches can be sent to the Yocto Project mailing
+list: yocto@yoctoproject.org"
+As a backup alternative the Enea Linux mailing list can be
+used: enealinux@lists.enea.com
+
+When sending patches please take a look at the contribution guide available
+here: https://wiki.yoctoproject.org/wiki/Contribution_Guidelines
+
+example:
+git send-email -1 -M --to yocto@yoctoproject.org  --subject-prefix=meta-cgl][PATCH
+
+
+Table of Contents
+=================
+
+  I. Adding the cgl layer to your build
+ II. Misc
+III. Layer specific information
+ IV. Specific terms and information
+
+
+I. Adding the cgl layer to your build
+=================================================
+
+In order to use this layer, you need to make the build system aware of
+it.
+
+Assuming the cgl layer exists at the top-level of your
+yocto build tree, you can add it to the build system by adding the
+location of the cgl layer to bblayers.conf, along with any
+other layers needed. Adapt the below list to proper format.
+
+  BBLAYERS:
+
+    meta
+    meta-cgl/meta-cgl-common
+    meta-qt3
+    meta-openembedded/meta-networking
+    meta-openembedded/meta-filesystems
+    meta-openembedded/meta-oe
+    meta-openembedded/meta-perl
+    meta-openembedded/meta-python
+    meta-yocto
+    meta-yocto-bsp
+    meta-virtualization
+    meta-selinux
+    meta-security
+    meta-cloud-services/meta-openstack
+
+A BBMASK definition is required because of some recipes duplicate existance:
+    BBMASK = "meta-openembedded/meta-oe/recipes-support/multipath-tools"
+
+II. Misc
+========
+
+The meta-cgl layer tries to offer CGL compliant packages to be used for
+a Linux distribution.
+
+
+III. Layer specific information
+==============================
+
+The layer contains a core package group (packagegroup-cgl.bb) that
+should aggregate all the other available package groups.
+The recommandation is to group all CGL compliant features into specific
+package groups.
+
+An CGL compliant Linux image is also available into the layer. Its use
+is to facilitate the development of a CGL compliant OS.
+The core image name is: core-image-cgl.bb
+
+
+IV. Specific terms and information
+==================================
+
+    HA(high availability) technology - refers to a system or component
+that is continuously operational for a long length of time.
+    Standard interface - represents a joint place of two systems or
+subsystems that has a previously agreed  upon form so that two systems
+may be readily connected together.
+    Service interface - a programatic interface that tries to achive
+interoperability. It enables users to describe independently of a platform
+or programming language operations required in the application system at
+a later stage.
+    Interface - shared boundary or connection between two dissimilar
+objects, devices or systems.

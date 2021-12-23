@@ -1,0 +1,46 @@
+From 5bf488a87f18cabf34e89f4f537ef6050b4f67cd Mon Sep 17 00:00:00 2001
+From: Jeremy Puhlman <jpuhlman@mvista.com>
+Date: Wed, 18 Mar 2020 18:58:05 +0000
+Subject: [PATCH 09/13] racoon2-iked-initscript
+
+---
+ samples/init.d/iked.in | 9 ++++++++-
+ 1 file changed, 8 insertions(+), 1 deletion(-)
+
+diff --git a/samples/init.d/iked.in b/samples/init.d/iked.in
+index ff26204..54bc721 100644
+--- a/samples/init.d/iked.in
++++ b/samples/init.d/iked.in
+@@ -3,6 +3,9 @@
+ # iked startup script
+ #
+ 
++# Source function library.
++[ -e /etc/init.d/functions ] && . /etc/init.d/functions
++
+ NAME=iked
+ DAEMON=@sbindir@/$NAME
+ PIDFILE=/var/run/$NAME.pid
+@@ -22,6 +25,10 @@ stop)
+ 	read pid junk < $PIDFILE && kill $pid
+ 	echo "."
+ 	;;
++status)
++	status $DAEMON;
++	exit $?
++	;;
+ restart)
+ 	$0 stop
+ 	$0 start
+@@ -32,7 +39,7 @@ reload)
+ 	echo "."
+ 	;;
+ *)
+-	echo "usage: $0 {start|stop|restart|reload}"
++	echo "usage: $0 {start|stop|status|restart|reload}"
+ 	exit 1
+ 	;;
+ esac
+-- 
+2.24.1
+
